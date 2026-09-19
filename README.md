@@ -9,7 +9,7 @@
 ## 組員的 GitHub 帳號
 
 
-| Column 1 | Column 2 |
+| 隊員 | Github帳號 |
 |-|-|
 |陳品叡|pinruei0323|
 |張御㨒|Alec1024-210|
