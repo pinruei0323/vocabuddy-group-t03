@@ -21,7 +21,7 @@
 
 ## 組員分工
 1. **陳品叡**：建立 GitHub Repository、邀請協作者、建立初始 `VocaBuddy.ipynb` 並新增第一版單字與第一次 Commit。
-2. **[第二位組員姓名]**：
+2. **張御㨒**：寫好gitignore 還有準備好uv 環境、新增考單字的功能
 
 
 ## 本次新增的單字與功能
@@ -31,9 +31,7 @@
   * `banana`（香蕉）
   * *(若有其他組員新增的單字可在此補充)*
 * **新增的功能**：
-  * 單字庫初始化與清單檢視
-  * 隨機抽取單字並顯示中文解釋
-  * *(請根據第二/三位組員實際寫入的功能調整)*
+  * 考單字
 
 ## Google Colab 開啟連結
 [點此透過 Google Colab 開啟 VocaBuddy.ipynb](https://colab.research.google.com/drive/1siUD3jBBmxax0lo0m6Y_vkS6j4Xnv1kj?usp=sharing)
