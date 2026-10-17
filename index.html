@@ -21,10 +21,12 @@
 <p id="stats"></p>
 <div id="card">—</div>
 <p id="meaning">&nbsp;</p>
+<p id="ai" style="max-width:340px;margin:8px auto;color:#555"></p>
 <div>
   <button id="reveal" onclick="reveal()">顯示答案</button>
   <button id="ok" onclick="mark(true)" hidden>記得 ✓</button>
   <button id="no" onclick="mark(false)" class="warn" hidden>忘了 ✗</button>
+  <button id="aiBtn" onclick="aiExample()" hidden>AI 例句</button>
 </div>
 <script>
 const WORDS = [
@@ -48,6 +50,8 @@ const $ = id => document.getElementById(id);
 
 function next(){
   stats();                      // 擺第一行：清空那條分支也要更新上方的計數
+  $("aiBtn").hidden = true;     // 換卡就收起 AI 例句
+  $("ai").textContent = "";
   if (queue.length === 0){
     $("card").textContent = "今日完成！";
     $("meaning").innerHTML = "&nbsp;";
@@ -65,6 +69,7 @@ function reveal(){
   $("meaning").textContent = cur.zh;
   $("reveal").hidden = true;
   $("ok").hidden = $("no").hidden = false;
+  $("aiBtn").hidden = false;    // 先自己回想、翻面後才給 AI 例句
 }
 
 function mark(ok){
@@ -78,6 +83,60 @@ function mark(ok){
 
 function stats(){
   $("stats").textContent = "今日佇列：剩 " + queue.length + " 張";
+}
+
+// AI 例句：教材原版是瀏覽器直呼 Claude API（使用者自帶金鑰）。
+// 目前沒有 key，先改呼叫本機 Ollama——只有開著 Ollama 的這台電腦有例句，
+// 其他人看到的是降階訊息，複習流程不受影響。
+const LOCAL_URL = "http://localhost:11434/api/chat";
+const LOCAL_MODEL = "qwen3.5:4b";    // 與 ollama pull 的一致
+const SYSTEM = '你是高中英語老師。只輸出 JSON：{"sentence":"...","zh":"...","tip":"..."}，不要 markdown 圍欄，不要其他文字。';
+
+async function askAI(word){          // 換回 Claude 時只要改這個函式：word 進、JSON 文字出
+  const res = await fetch(LOCAL_URL, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      model: LOCAL_MODEL,
+      stream: false,
+      think: false,                  // qwen3.5 預設先思考，實測慢 20 倍
+      format: "json",                // Ollama 端的結構化輸出：保證回的是合法 JSON
+      messages: [{ role: "system", content: SYSTEM },
+                 { role: "user", content: "用單字 " + word + " 造一個 CEFR B1 例句、中譯與聯想" }]
+    })
+  });
+  if (!res.ok) throw new Error("Ollama 回應 " + res.status);
+  return (await res.json()).message.content;
+}
+
+async function aiExample(){
+  const word = cur.en, box = $("ai");
+  let cache = {};
+  try { cache = JSON.parse(localStorage.getItem("vb-ai")) || {}; } catch(e){}
+  if (cache[word]) return show(cache[word]);        // 快取命中：不呼叫模型、離線可用
+  box.textContent = "生成中…（本機模型約 10 秒）";
+  $("aiBtn").disabled = true;
+  try {
+    const c = JSON.parse(await askAI(word));
+    if (typeof c.sentence !== "string" || !c.sentence.toLowerCase().includes(word.toLowerCase()))
+      throw new Error("例句沒包含目標單字");
+    cache[word] = c;
+    try { localStorage.setItem("vb-ai", JSON.stringify(cache)); } catch(e){}
+    show(c);
+  } catch (e) {
+    if (cur && cur.en === word)
+      box.textContent = "AI 暫時不可用——不影響複習，例句之後再補。";
+  } finally {
+    $("aiBtn").disabled = false;
+  }
+  function show(c){
+    if (!cur || cur.en !== word) return;           // 生成期間已換卡：結果留在快取，不蓋到別張卡上
+    box.textContent = "";                        // 模型輸出一律當「文字」，不當 HTML
+    const em = document.createElement("em");
+    em.textContent = c.sentence;
+    box.append(em, document.createElement("br"),
+               c.zh, document.createElement("br"), "聯想：" + c.tip);
+  }
 }
 
 next();
