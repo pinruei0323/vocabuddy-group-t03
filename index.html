@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>YTP VocaBuddy</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f766e">
 <style>
   body{font-family:system-ui,sans-serif;background:#f4f6f5;margin:0;padding:24px;text-align:center}
   h1{color:#0f766e}
@@ -206,6 +208,10 @@ async function smartQuiz(){
 }
 
 next();
+
+// 註冊 service worker
+if ("serviceWorker" in navigator && location.protocol.startsWith("http"))
+  navigator.serviceWorker.register("sw.js").catch(() => {});   // file:// 開啟時不註冊也不噴錯
 </script>
 </body>
 </html>
