@@ -22,6 +22,7 @@
 ## 組員分工
 1. **陳品叡**：建立 GitHub Repository、邀請協作者、建立初始 `VocaBuddy.ipynb` 並新增第一版單字與第一次 Commit。
 2. **張御㨒**：寫好gitignore 還有準備好uv 環境、新增考單字的功能
+3. **利勁鋼**：新增網頁版單字卡 `index.html`、補上 `.gitattributes`（Lab 1）
 
 
 ## 本次新增的單字與功能
@@ -37,6 +38,14 @@
 [點此透過 Google Colab 開啟 VocaBuddy.ipynb](https://colab.research.google.com/drive/1siUD3jBBmxax0lo0m6Y_vkS6j4Xnv1kj?usp=sharing)
 
 ## 程式執行方式
+### 網頁版單字卡
+直接用瀏覽器打開 `index.html`：點卡片翻面看中文，點「下一張」換單字。
+
+### Colab 筆記本
 1. 點擊上方提供的 **Google Colab 開啟連結** 進入筆記本。
 2. 點選 Google Colab 上方選單的 **「執行階段」**。
-3. 點選 **「全部執行」**，即可依序載入單字庫並執行各項單字查詢與測驗功能[cite: 1]。
+3. 點選 **「全部執行」**，即可依序載入單字庫並執行各項單字查詢與測驗功能。
+
+## 使用技術
+* 網頁版：HTML / CSS / JavaScript（單一 `index.html`，不需安裝任何套件）
+* 筆記本：Python、Google Colab、uv
