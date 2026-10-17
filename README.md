@@ -1,5 +1,7 @@
 # vocabuddy-group-t03
 
+[![CI](https://github.com/pinruei0323/vocabuddy-group-t03/actions/workflows/ci.yml/badge.svg)](https://github.com/pinruei0323/vocabuddy-group-t03/actions/workflows/ci.yml)
+
 ## 小組名稱
 為什麼初賽在分科前
 
