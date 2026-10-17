@@ -28,17 +28,13 @@
   <button id="no" onclick="mark(false)" class="warn" hidden>忘了 ✗</button>
   <button id="aiBtn" onclick="aiExample()" hidden>AI 例句</button>
 </div>
+<div style="margin-top:24px">
+  <button onclick="smartQuiz()">考我弱點</button>
+</div>
+<div id="quiz" style="max-width:340px;margin:8px auto;color:#333"></div>
+<script src="words.js"></script>
 <script src="srs.js"></script>
 <script>
-const WORDS = [
-  {en:"apple", zh:"蘋果"},         {en:"orange", zh:"橘子"},
-  {en:"banana", zh:"香蕉"},
-  {en:"algorithm", zh:"演算法"},   {en:"recursion", zh:"遞迴"},
-  {en:"vocabulary", zh:"字彙"},    {en:"memorize", zh:"背誦"},
-  {en:"efficient", zh:"有效率的"}, {en:"persist", zh:"堅持；持續"},
-  {en:"retrieve", zh:"取回；檢索"},{en:"interval", zh:"間隔"}
-];
-
 // 學習紀錄：只屬於這台裝置，所以放 localStorage（讀寫都包 try/catch）
 let log = {};
 try { log = JSON.parse(localStorage.getItem("vb-log")) || {}; } catch(e){}
@@ -109,9 +105,11 @@ function stats(){
 // 其他人看到的是降階訊息，複習流程不受影響。
 const LOCAL_URL = "http://localhost:11434/api/chat";
 const LOCAL_MODEL = "qwen3.5:4b";    // 與 ollama pull 的一致
-const SYSTEM = '你是高中英語老師。只輸出 JSON：{"sentence":"...","zh":"...","tip":"..."}，不要 markdown 圍欄，不要其他文字。';
+const EXAMPLE_SYSTEM = '你是高中英語老師。只輸出 JSON：{"sentence":"...","zh":"...","tip":"..."}，不要 markdown 圍欄，不要其他文字。';
 
-async function askAI(word){          // 換回 Claude 時只要改這個函式：word 進、JSON 文字出
+// 共用的 AI 呼叫：給 system 與 user 兩段提示，回傳模型的文字（例句與出題都用它）
+// 換回 Claude 時只要改這個函式（教材的 callClaude）
+async function callAI(system, user){
   const res = await fetch(LOCAL_URL, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -120,8 +118,8 @@ async function askAI(word){          // 換回 Claude 時只要改這個函式�
       stream: false,
       think: false,                  // qwen3.5 預設先思考，實測慢 20 倍
       format: "json",                // Ollama 端的結構化輸出：保證回的是合法 JSON
-      messages: [{ role: "system", content: SYSTEM },
-                 { role: "user", content: "用單字 " + word + " 造一個 CEFR B1 例句、中譯與聯想" }]
+      messages: [{ role: "system", content: system },
+                 { role: "user", content: user }]
     })
   });
   if (!res.ok) throw new Error("Ollama 回應 " + res.status);
@@ -136,7 +134,7 @@ async function aiExample(){
   box.textContent = "生成中…（本機模型約 10 秒）";
   $("aiBtn").disabled = true;
   try {
-    const c = JSON.parse(await askAI(word));
+    const c = JSON.parse(await callAI(EXAMPLE_SYSTEM, "用單字 " + word + " 造一個 CEFR B1 例句、中譯與聯想"));
     if (typeof c.sentence !== "string" || !c.sentence.toLowerCase().includes(word.toLowerCase()))
       throw new Error("例句沒包含目標單字");
     cache[word] = c;
@@ -155,6 +153,55 @@ async function aiExample(){
     em.textContent = c.sentence;
     box.append(em, document.createElement("br"),
                c.zh, document.createElement("br"), "聯想：" + c.tip);
+  }
+}
+
+// —— 弱點檢索：按錯誤率排序取前 k 名（RAG-lite 的 Retrieval）——
+function weakest(k){
+  return WORDS
+    .map(w => { const s = log[w.en] || {seen:0, wrong:0};
+                return { en: w.en, zh: w.zh, rate: s.wrong / (s.seen || 1) }; })
+    .sort((a, b) => b.rate - a.rate)
+    .slice(0, k);
+}
+
+// —— 智慧出題：檢索出的弱字塞進 prompt，讓 AI 針對它們出題 ——
+async function smartQuiz(){
+  const t = weakest(3);
+  const box = $("quiz");
+  box.textContent = "出題中…（本機模型約 10 秒）";
+  try {
+    const text = await callAI(
+      '你是出題老師。只輸出 JSON：{"question":"...","options":["..","..","..",".."],' +
+      '"answer":"..","why":".."}。question 是含 ____ 的英文克漏字句。',
+      "使用者最常錯的單字：" + t.map(w => w.en + "（" + w.zh + "）").join("、") +
+      "。從中挑一個出一題四選一，選項要包含正確答案與三個貼近的干擾項。");
+    const q = JSON.parse(text);
+    // 把模型回的答案對回單字包裡的本尊：大小寫不同、或根本不是你的單字，都不出題
+    const hit = t.find(w => w.en.toLowerCase() === String(q.answer || "").toLowerCase());
+    if (!Array.isArray(q.options) || q.options.length !== 4 ||
+        !q.options.includes(q.answer) || !hit) throw new Error("題目格式不合格");
+    box.textContent = "";                                 // 模型輸出當文字，不當 HTML
+    const p = document.createElement("p");
+    p.textContent = q.question;
+    box.appendChild(p);
+    q.options.forEach(op => {
+      const b = document.createElement("button");
+      b.textContent = op;
+      b.onclick = () => {
+        box.querySelectorAll("button").forEach(x => x.disabled = true);   // 一題只記一次
+        const ok = op === q.answer;
+        const s = log[hit.en] || (log[hit.en] = {seen:0, wrong:0});   // 鍵用本尊，不用模型字串
+        s.seen++; if (!ok) s.wrong++;                     // 答題結果寫回紀錄：閉環
+        save();
+        const r = document.createElement("p");
+        r.textContent = ok ? "答對！" + q.why : "正解：" + q.answer + "。" + q.why;
+        box.appendChild(r);
+      };
+      box.appendChild(b);
+    });
+  } catch (e) {
+    box.textContent = "AI 暫時不可用，先用單字卡複習吧。";
   }
 }
 
