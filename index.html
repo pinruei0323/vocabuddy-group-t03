@@ -19,6 +19,7 @@
 <div id="card"></div>
 <p id="hint">點卡片看中文，點「下一張」換單字</p>
 <button onclick="next()">下一張</button>
+<button onclick="quiz()">考我</button>
 <script>
 const WORDS = [
   ["apple","蘋果"],["orange","橘子"],["banana","香蕉"],
@@ -30,6 +31,12 @@ let i = 0, flipped = false;
 const card = document.getElementById("card");
 card.onclick = () => { flipped = !flipped; render(); };
 function next(){ i = (i + 1) % WORDS.length; flipped = false; render(); }
+function quiz(){
+  if (WORDS.length < 2) return;   // 只有一個字就沒得抽，直接結束，避免無窮迴圈
+  let j;
+  do { j = Math.floor(Math.random() * WORDS.length); } while (j === i);
+  i = j; flipped = false; render();
+}
 function render(){ card.textContent = WORDS[i][flipped ? 1 : 0]; }
 render();   // 載入時先畫第一張，畫面永遠跟 WORDS 同步
 </script>
