@@ -3,7 +3,7 @@ import anthropic
 import requests
 
 MODEL = "claude-sonnet-5-5"   # 最新名稱見附錄 B
-LOCAL_MODEL = "qwen3.5:4b"    # 與 ollama pull 的一致；這台電腦 4 GB 顯存，選小型號
+LOCAL_MODELS = ["qwen3.5:4b", "qwen2.5:14b", "yet_another_model:1b"]    # 與 ollama pull 的一致；這台電腦 4 GB 顯存，選小型號
 SYSTEM = "你是高中英語老師。只輸出 JSON。"
 PROMPT = ("為英文單字「{word}」產生學習卡內容。只回傳 JSON，不要其他文字，不要 markdown 圍欄，"
           '格式：{{"word": "...", "sentence": "...", "zh": "...", "tip": "..."}}。'
@@ -26,15 +26,21 @@ def ask_claude(prompt, system=SYSTEM):
     return text_of(msg)
 
 def ask_local(prompt, system=SYSTEM):
-    r = requests.post("http://localhost:11434/api/chat", json={
-        "model": LOCAL_MODEL,
-        "messages": [{"role": "system", "content": system},
-                     {"role": "user", "content": prompt}],
-        "stream": False,
-        "think": False,   # qwen3.5 預設先思考：實測 4 GB 顯存要 3 分鐘，關掉約 10 秒
-    }, timeout=180)
-    r.raise_for_status()
-    return r.json()["message"]["content"]
+    for model in LOCAL_MODELS:
+        try:
+            r = requests.post(f"http://localhost:11434/api/chat", json={
+                "model": model,
+                "messages": [{"role": "system", "content": system},
+                             {"role": "user", "content": prompt}],
+                "stream": False,
+                "think": False,   # qwen3.5 預設先思考：實測 4 GB 顯存要 3 分鐘，關掉約 10 秒
+            }, timeout=180)
+            r.raise_for_status()
+            return r.json()["message"]["content"]
+        except Exception as e:
+            #print(f"[{model}] 失敗：{type(e).__name__}", file=sys.stderr)
+            continue
+    return None
 
 ASK = {"claude": ask_claude, "local": ask_local}   # 兩個同形的函式
 CHAIN = {"claude": ["claude"], "local": ["local"],
