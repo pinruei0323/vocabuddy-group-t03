@@ -41,7 +41,28 @@
 
 ## 程式執行方式
 ### 網頁版單字卡
-直接用瀏覽器打開 `index.html`：點卡片翻面看中文，點「下一張」換單字。
+在專案資料夾啟動本機伺服器，再用瀏覽器打開 http://localhost:8000：
+
+```bash
+python -m http.server 8000
+```
+
+不要直接點兩下 `index.html`（`file://`）：AI 例句與「考我弱點」要呼叫本機 Ollama，而 Ollama 會擋下 `file://` 來的請求；PWA 的 service worker 也只在 http(s) 下運作。AI 功能需要先安裝 [Ollama](https://ollama.com) 並執行 `ollama pull qwen3.5:4b`；沒有的話背單字照常可用。
+
+### Python 工具（例句生成 CLI）
+套件用 [uv](https://docs.astral.sh/uv/) 管理，記錄在 `pyproject.toml` 與 `uv.lock`。拉下專案後裝好一模一樣的套件：
+
+```bash
+uv sync
+```
+
+執行（`--provider` 可選 `claude`、`local`、`auto`）：
+
+```bash
+uv run python tools/gen_example.py interval --provider local
+```
+
+新增套件請用 `uv add 套件名稱`，不要用 `pip install`，這樣其他人 `uv sync` 才會裝到。
 
 ### Colab 筆記本
 1. 點擊上方提供的 **Google Colab 開啟連結** 進入筆記本。
@@ -49,5 +70,7 @@
 3. 點選 **「全部執行」**，即可依序載入單字庫並執行各項單字查詢與測驗功能。
 
 ## 使用技術
-* 網頁版：HTML / CSS / JavaScript（單一 `index.html`，不需安裝任何套件）
-* 筆記本：Python、Google Colab、uv
+* 網頁版：HTML / CSS / JavaScript、PWA、本機 Ollama（qwen3.5:4b）
+* Python 工具：anthropic、requests（uv 管理）
+* 筆記本：Python、Google Colab
+* CI：GitHub Actions（`node test_srs.js`、`node check_words.js`）
