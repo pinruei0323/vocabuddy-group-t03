@@ -35,6 +35,7 @@
   * *(若有其他組員新增的單字可在此補充)*
 * **新增的功能**：
   * 考單字
+  * 單字包 CSV 匯入（Lab 10 畢業挑戰）：貼上 `en,zh` 格式的 CSV，即可擴充自訂單字；含格式驗證（欄位缺漏、重複字、BOM、CRLF、引號內逗號），錯誤行逐行回報，合法行照常匯入。
 
 ## Google Colab 開啟連結
 [點此透過 Google Colab 開啟 VocaBuddy.ipynb](https://colab.research.google.com/drive/1siUD3jBBmxax0lo0m6Y_vkS6j4Xnv1kj?usp=sharing)
@@ -42,6 +43,9 @@
 ## 程式執行方式
 ### 網頁版單字卡
 直接用瀏覽器打開 `index.html`：點卡片翻面看中文，點「下一張」換單字。
+
+### CSV 單字包匯入
+在 `index.html` 的匯入區塊貼上 `en,zh` 格式的 CSV 文字（例如 `apple,蘋果`），即可將單字加入複習併列。支援 BOM、CRLF、引號內逗號（例如 `"give up","放棄；投降, 認輸"`）；錯誤行會以紅字逐行說明原因，不影響其他合法行匯入。匯入後重新整理仍在，並會進入複習與弱點出題。
 
 ### Colab 筆記本
 1. 點擊上方提供的 **Google Colab 開啟連結** 進入筆記本。
