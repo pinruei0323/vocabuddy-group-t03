@@ -106,7 +106,7 @@ function stats(){
 // 目前沒有 key，先改呼叫本機 Ollama——只有開著 Ollama 的這台電腦有例句，
 // 其他人看到的是降階訊息，複習流程不受影響。
 const LOCAL_URL = "http://localhost:11434/api/chat";
-const LOCAL_MODEL = "qwen3.5:9b";    // 與 ollama pull 的一致
+const LOCAL_MODEL = localStorage.getItem("vb-ollama-model") || "qwen3.5:4b";  // 預設 4b，可在 Console 自訂
 const EXAMPLE_SYSTEM = '你是高中英語老師。只輸出 JSON：{"sentence":"...","zh":"...","tip":"..."}，不要 markdown 圍欄，不要其他文字。';
 
 // 共用的 AI 呼叫：給 system 與 user 兩段提示，回傳模型的文字（例句與出題都用它）

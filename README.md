@@ -138,7 +138,15 @@ uv run python tools/gen_example.py interval --provider local
 
 新增套件請用 `uv add 套件名稱`，不要用 `pip install`，這樣其他人 `uv sync` 才會裝到。
 
-> AI 例句功能：目前呼叫本地 Olloma（模型 `qwen3.5:9b`）。若要使用 AI 例句，請先啟動 Olloma 並拉取模型：`ollama pull qwen3.5:9b`，再開啟 `http://localhost:8000/` 使用。若未啟動 Olloma，AI 例句會顯示「AI 暫時不可用」，但不影響單字卡複習流程。
+> AI 例句功能：目前呼叫本地 Olloma（預設模型 `qwen3.5:4b`）。
+>
+> 若要換用你自己的模型（例如 `qwen3.5:9b`），不需要改程式碼：
+> 1. 在瀏覽器開啟 `http://localhost:8000/` 後，打開開發者工具（F12）→ Console
+> 2. 執行：`localStorage.setItem("vb-ollama-model", "qwen3.5:9b")`
+> 3. 重新整理頁面，即會使用你指定的模型
+>
+> 若要先拉取模型：`ollama pull qwen3.5:9b`
+> 若未啟動 Olloma，AI 例句會顯示「AI 暫時不可用」，但不影響單字卡複習流程。
 
 ### CSV 單字包匯入
 在 `index.html` 的匯入區塊貼上 `en,zh` 格式的 CSV 文字（例如 `apple,蘋果`），即可將單字加入複習併列。支援 BOM、CRLF、引號內逗號（例如 `"give up","放棄；投降, 認輸"`）；錯誤行會以紅字逐行說明原因，不影響其他合法行匯入。匯入後重新整理仍在，並會進入複習與弱點出題。
