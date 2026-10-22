@@ -138,14 +138,20 @@ uv run python tools/gen_example.py interval --provider local
 
 新增套件請用 `uv add 套件名稱`，不要用 `pip install`，這樣其他人 `uv sync` 才會裝到。
 
-> AI 例句功能：目前呼叫本地 Olloma（預設模型 `qwen3.5:4b`）。
+> AI 例句功能：目前呼叫本地 Olloma（預設網址 `http://100.113.111.50:11434`，預設模型 `qwen3.5:9b`）。
 >
-> 若要換用你自己的模型（例如 `qwen3.5:9b`），不需要改程式碼：
+> 若要換用你自己的 Olloma 網址或模型，不需要改程式碼：
 > 1. 在瀏覽器開啟 `http://localhost:8000/` 後，打開開發者工具（F12）→ Console
-> 2. 執行：`localStorage.setItem("vb-ollama-model", "qwen3.5:9b")`
-> 3. 重新整理頁面，即會使用你指定的模型
+> 2. 執行（換成你自己的網址與模型）：
+>    ```javascript
+>    localStorage.setItem("vb-ollama-url", "http://你的-ip:11434/api/chat");
+>    localStorage.setItem("vb-ollama-model", "qwen3.5:9b");
+>    ```
+> 3. 重新整理頁面，即會使用你指定的網址與模型
 >
-> 若要先拉取模型：`ollama pull qwen3.5:9b`
+> 若要確認 Olloma 是否運行，可在瀏覽器打開：
+> `http://100.113.111.50:11434/api/tags`
+>
 > 若未啟動 Olloma，AI 例句會顯示「AI 暫時不可用」，但不影響單字卡複習流程。
 
 ### CSV 單字包匯入
