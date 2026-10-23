@@ -1,10 +1,13 @@
-const CACHE = "ytp-vocabuddy-v5";     // v5：翻卡介面與 AI 生成動畫
+const CACHE = "ytp-vocabuddy-v6";     // v6：安裝時繞過 HTTP 快取逐檔抓（修 v5 裝到舊 words.js 的問題）
 const SHELL = ["./", "index.html", "words.js", "srs.js", "csv.js", "manifest.json", "icon.png"];
 
 self.addEventListener("install", e => {
   // 新版不等所有分頁關閉就接手；頁面收到通知後彈「有新版本」，重載時機由人決定
   self.skipWaiting();
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)));   // 安裝時先存一份
+  // cache:"reload" 繞過瀏覽器 HTTP 快取逐檔抓，避免「新版 SW 裝了舊檔」的混合快取
+  e.waitUntil(caches.open(CACHE).then(c =>
+    Promise.all(SHELL.map(u => c.add(new Request(u, { cache: "reload" }))))
+  ));
 });
 
 self.addEventListener("activate", e => {
