@@ -31,7 +31,7 @@
 | `.github/workflows/ci.yml` | CI：每個 PR 跑三個檢查 |
 | `CLAUDE.md` | 專案指示檔（Lab 12） |
 | `.claude/skills/add-words/`、`.claude/agents/code-reviewer.md` | 技能與子代理（Lab 13／14） |
-| `pyproject.toml`＋`uv.lock`＋`src/`＋`VocaBuddy.ipynb` | Python 端套件管理與筆記本 |
+| `pyproject.toml`＋`uv.lock` | Python 端套件管理（例句 CLI 的依賴） |
 | `readme-2.md`／`readme-3.md` | 歷史版 README 存檔 |
 | `labs/lab01~lab14` | 課程教材完成版參考（69 檔，唯讀對照用） |
 
