@@ -75,6 +75,15 @@
   #csvText:focus-visible{outline:3px solid var(--mark);outline-offset:2px}
   #csvMsg{margin-top:10px;font-size:.88rem;text-align:left;white-space:pre-line}
   #csvMsg .bad{color:#ffb3aa}
+
+  /* 新版本提示：底部毛玻璃藥丸（backdrop blur＋輕盈上浮，向 Apple 的通知膠囊借鏡） */
+  #updateToast{position:fixed;left:50%;bottom:max(18px,env(safe-area-inset-bottom));z-index:9;
+    display:flex;align-items:center;gap:14px;padding:10px 12px 10px 18px;border-radius:99px;
+    background:#0b3530d9;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    box-shadow:0 12px 32px #0007;font-size:.9rem;
+    opacity:0;transform:translate(-50%,14px);transition:opacity .3s,transform .3s;pointer-events:none}
+  #updateToast.on{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+  #updateToast .btn{padding:8px 16px}
 </style>
 </head>
 <body>
@@ -105,6 +114,7 @@
     </div>
   </div>
 </main>
+<div id="updateToast" hidden role="status"><span>VocaBuddy 有新版本</span><button class="btn main" onclick="location.reload()">重新整理</button></div>
 <script src="words.js"></script>
 <script src="srs.js"></script>
 <script src="csv.js"></script>
@@ -436,9 +446,34 @@ function clearImported(){
 
 next();
 
-// 註冊 service worker
-if ("serviceWorker" in navigator && location.protocol.startsWith("http"))
-  navigator.serviceWorker.register("sw.js").catch(() => {});   // file:// 開啟時不註冊也不噴錯
+// 用途：新版 service worker 接手後彈底部提示——人點「重新整理」才換頁，不打斷眼前正在複習的卡
+function showUpdateToast(){
+  const t = $("updateToast");
+  if (!t.hidden) return;
+  t.hidden = false;
+  void t.offsetWidth;      // 先讓 display 生效，transition 才接得上
+  t.classList.add("on");
+}
+
+// 註冊 service worker；偵測到新版已接手就彈「有新版本」提示，重載時機由人決定（file:// 不註冊也不噴錯）
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")){
+  let firstTakeover = !navigator.serviceWorker.controller;   // 首次安裝的接手不算「有新版本」
+  navigator.serviceWorker.register("sw.js").then(reg => {
+    if (reg.waiting && navigator.serviceWorker.controller) return showUpdateToast();   // 已有等待中的新版
+    reg.addEventListener("updatefound", () => {
+      const nw = reg.installing;
+      if (nw) nw.addEventListener("statechange", () => {
+        if (nw.state === "installed" && navigator.serviceWorker.controller) showUpdateToast();
+      });
+    });
+  }).catch(() => {});
+  navigator.serviceWorker.addEventListener("message", e => {
+    if (e.data && e.data.type === "vb-activated"){
+      if (firstTakeover){ firstTakeover = false; return; }   // 自己這次的首次安裝
+      showUpdateToast();
+    }
+  });
+}
 </script>
 </body>
 </html>
