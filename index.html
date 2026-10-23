@@ -20,22 +20,37 @@
   .bar{height:6px;border-radius:9px;background:#ffffff2e;overflow:hidden}
   .bar i{display:block;width:0;height:100%;background:var(--mark);transition:width .4s}
 
-  /* 單字卡：頂端紅線、底下藍色橫格，像真的索引卡 */
-  #card{margin:22px 0 14px;padding:54px 22px 46px;min-height:170px;display:flex;align-items:center;justify-content:center;
-        color:var(--ink);border-radius:10px;box-shadow:0 14px 28px -12px #0008;user-select:none;word-break:break-word;
-        font:800 clamp(2.1rem,10vw,3rem)/1.15 ui-rounded,"SF Pro Rounded",system-ui,sans-serif;letter-spacing:-.01em;
+  /* 單字卡：可翻面的索引卡——正面紅線藍格寫英文、背面螢光筆寫中文。
+     翻轉手感借鏡 Apple：preserve-3d＋backface-visibility，緩動用近似 iOS 的 spring 曲線 */
+  #card{margin:22px 0 14px;min-height:170px;perspective:1400px;user-select:none;word-break:break-word;
+        font:800 clamp(2.1rem,10vw,3rem)/1.15 ui-rounded,"SF Pro Rounded",system-ui,sans-serif;letter-spacing:-.01em}
+  .cardInner{position:relative;min-height:170px;transform-style:preserve-3d;
+             transition:transform .55s cubic-bezier(.32,.72,.24,1)}
+  #card.flip .cardInner{transform:rotateY(180deg)}
+  #card.snap .cardInner{transition:none!important}   /* 換卡時直接歸位正面，不播回轉動畫 */
+  .face{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+        padding:54px 22px 46px;border-radius:10px;box-shadow:0 14px 28px -12px #0008;color:var(--ink);
+        backface-visibility:hidden;-webkit-backface-visibility:hidden;
         background:linear-gradient(var(--bad),var(--bad)) 0 31px/100% 2px no-repeat,
                    repeating-linear-gradient(transparent 0 31px,var(--rule) 31px 32px),var(--paper)}
-  #card.pop{animation:pop .3s ease-out}
+  .face.back{transform:rotateY(180deg)}
+  #card.pop .cardInner{animation:pop .3s ease-out}
   #card.done{font-size:1.3rem;line-height:1.6}
   @keyframes pop{from{opacity:0;transform:translateY(10px)}}
 
-  /* 中文意思：螢光筆黃的便利貼 */
-  #meaning{width:fit-content;min-height:1.9em;margin:0 auto;padding:2px 16px;border-radius:6px;font-size:1.2rem;font-weight:700}
+  /* 中文意思：背面那張螢光筆黃的便利貼 */
+  #meaning{width:fit-content;min-height:1.9em;margin:0 auto;padding:2px 16px;border-radius:6px;font-size:1.5rem;font-weight:700}
   #meaning.on{background:var(--mark);color:var(--ink);transform:rotate(-1deg)}
   #ai{margin:14px 0 0;padding:10px 14px;text-align:left;font-size:.92rem;color:var(--ink);
       background:var(--paper);border-left:4px solid var(--mark);border-radius:6px}
   #ai:empty{display:none}
+
+  /* AI 生成中的三點呼吸動畫（借鏡 iMessage 的輸入指示） */
+  .dots{display:inline-flex;gap:5px;margin-right:8px;vertical-align:middle}
+  .dots i{width:7px;height:7px;border-radius:50%;background:var(--ink);animation:vbDot 1.2s ease-in-out infinite}
+  .dots i:nth-child(2){animation-delay:.18s}
+  .dots i:nth-child(3){animation-delay:.36s}
+  @keyframes vbDot{0%,60%,100%{opacity:.25;transform:translateY(0)}30%{opacity:.9;transform:translateY(-3px)}}
 
   .row{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:16px}
   .btn{padding:11px 22px;border:0;border-radius:10px;background:var(--paper);color:var(--ink);font:inherit;font-weight:700;cursor:pointer;transition:transform .1s}
@@ -91,8 +106,14 @@
   <h1>YTP VocaBuddy<small>Pro 2.0</small></h1>
   <p id="stats"></p>
   <div class="bar"><i id="bar"></i></div>
-  <div id="card">—</div>
-  <p id="meaning">&nbsp;</p>
+  <div id="card" role="button" tabindex="0" aria-label="單字卡：點一下或按 Enter 翻面看中文"
+       onclick="if(cur && !$('reveal').hidden) reveal()"
+       onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); if(cur && !$('reveal').hidden) reveal();}">
+    <div class="cardInner">
+      <div class="face front" id="cardFront">—</div>
+      <div class="face back"><p id="meaning">&nbsp;</p></div>
+    </div>
+  </div>
   <p id="ai"></p>
   <div class="row">
     <button class="btn main" id="reveal" onclick="reveal()">顯示答案</button>
@@ -160,27 +181,33 @@ function next(){
   $("aiBtn").hidden = true;     // 換卡就收起 AI 例句
   $("ai").textContent = "";
   $("meaning").className = "";
-  $("meaning").innerHTML = "&nbsp;";
+  $("meaning").textContent = "\u00a0";
   const c = $("card");
+  c.classList.add("snap");      // 換卡先瞬間翻回正面，才不會看到背面旋轉出去
+  c.classList.remove("flip");
+  void c.offsetWidth;
+  c.classList.remove("snap");
   if (queue.length === 0){
     c.className = "done";
-    c.textContent = "今天沒有到期的卡——明天見！";
+    $("cardFront").textContent = "今天沒有到期的卡——明天見！";
     $("reveal").hidden = $("ok").hidden = $("no").hidden = true;
     return;
   }
   cur = queue[0];
   c.className = ""; void c.offsetWidth; c.className = "pop";   // 重啟換卡動畫
-  c.textContent = cur.en;
+  $("cardFront").textContent = cur.en;
   $("reveal").hidden = false;
   $("ok").hidden = $("no").hidden = true;
 }
 
+// 用途：把卡翻到背面——中文意思用螢光筆亮起，自評與 AI 例句這時才登場（先回想、後提示）
 function reveal(){
   $("meaning").textContent = cur.zh;
   $("meaning").className = "on";
+  $("card").classList.add("flip");
   $("reveal").hidden = true;
   $("ok").hidden = $("no").hidden = false;
-  $("aiBtn").hidden = false;    // 先自己回想、翻面後才給 AI 例句
+  $("aiBtn").hidden = false;
 }
 
 function mark(ok){
@@ -270,7 +297,12 @@ async function aiExample(){
   let cache = {};
   try { cache = JSON.parse(localStorage.getItem("vb-ai")) || {}; } catch(e){}
   if (cache[word]) return show(cache[word]);        // 快取命中：不呼叫模型、離線可用
-  box.textContent = CLAUDE_KEY ? "生成中…" : "生成中…（本機模型約 10 秒）";
+  box.textContent = "";                                        // 生成中：iMessage 式三點呼吸動畫，不再是死板文字
+  const dots = document.createElement("span");
+  dots.className = "dots";
+  for (let i = 0; i < 3; i++) dots.appendChild(document.createElement("i"));
+  box.appendChild(dots);
+  box.appendChild(document.createTextNode(CLAUDE_KEY ? "生成中…" : "生成中…（本機模型約 10 秒）"));
   $("aiBtn").disabled = true;
   try {
     const c = JSON.parse(await callAI(EXAMPLE_SYSTEM, "用單字 " + word + " 造一個 CEFR B1 例句、中譯與聯想"));

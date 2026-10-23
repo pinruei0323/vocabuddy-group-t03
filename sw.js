@@ -1,4 +1,4 @@
-const CACHE = "ytp-vocabuddy-v4";     // v4：單字包擴充（學測＋多益主題）
+const CACHE = "ytp-vocabuddy-v5";     // v5：翻卡介面與 AI 生成動畫
 const SHELL = ["./", "index.html", "words.js", "srs.js", "csv.js", "manifest.json", "icon.png"];
 
 self.addEventListener("install", e => {
