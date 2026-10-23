@@ -11,6 +11,9 @@ const WORDS = [
   {en:"dolphin", zh:"海豚"},       {en:"penguin", zh:"企鵝"},
   {en:"squirrel", zh:"松鼠"},      {en:"turtle", zh:"烏龜"},
   {en:"kangaroo", zh:"袋鼠"},      {en:"octopus", zh:"章魚"},
-  {en:"butterfly", zh:"蝴蝶"},     {en:"leopard", zh:"花豹"}
+  {en:"butterfly", zh:"蝴蝶"},     {en:"leopard", zh:"花豹"},
+  // 演算法主題單字包（Lab 11 小改動）
+  {en:"loop", zh:"迴圈"},          {en:"variable", zh:"變數"},
+  {en:"debug", zh:"除錯"}
 ];
 if (typeof module !== "undefined") module.exports = WORDS;
