@@ -1,4 +1,4 @@
-const CACHE = "ytp-vocabuddy-v3";     // v3：加入更新提示（skipWaiting＋activate 通知頁面）
+const CACHE = "ytp-vocabuddy-v4";     // v4：單字包擴充（學測＋多益主題）
 const SHELL = ["./", "index.html", "words.js", "srs.js", "csv.js", "manifest.json", "icon.png"];
 
 self.addEventListener("install", e => {
