@@ -162,17 +162,47 @@ function stats(){
   $("bar").style.width = (total ? (total - queue.length) / total * 100 : 100) + "%";
 }
 
-// AI 例句：教材原版是瀏覽器直呼 Claude API（使用者自帶金鑰）。
-// 目前改呼叫本地 Ollama——只有開著 Ollama 的這台電腦有例句，
-// 其他人看到的是降階訊息，複習流程不受影響。
-// 網址與模型名稱皆可在 Console 自訂，不需要改程式碼。
+// AI 例句與出題共用的後端選擇（Lab 6）：
+//   有 vb-claude-key → 瀏覽器直呼 Claude API（教材標準做法，使用者自帶金鑰 BYOK，只存在自己的 localStorage）
+//   沒有金鑰       → 呼叫 Ollama（團隊預設；網址與模型皆可在 Console 自訂，不必改程式碼）
 const LOCAL_URL = localStorage.getItem("vb-ollama-url") || "http://100.113.111.50:11434/api/chat";
 const LOCAL_MODEL = localStorage.getItem("vb-ollama-model") || "qwen3.5:9b";
+const CLAUDE_MODEL = "claude-sonnet-5-5";
+let CLAUDE_KEY = "";
+try { CLAUDE_KEY = (localStorage.getItem("vb-claude-key") || "").trim(); } catch(e){}
+if (CLAUDE_KEY === "null") CLAUDE_KEY = "";   // prompt() 按取消會被存成字串 "null"，當成沒金鑰
 const EXAMPLE_SYSTEM = '你是高中英語老師。只輸出 JSON：{"sentence":"...","zh":"...","tip":"..."}，不要 markdown 圍欄，不要其他文字。';
 
 // 共用的 AI 呼叫：給 system 與 user 兩段提示，回傳模型的文字（例句與出題都用它）
-// 換回 Claude 時只要改這個函式（教材的 callClaude）
 async function callAI(system, user){
+  return CLAUDE_KEY ? callClaude(system, user) : callOllama(system, user);
+}
+
+// 教材原版（Lab 6）：fetch 直呼 Messages API。
+// 瀏覽器直呼必帶 dangerous-direct-browser-access 標頭——名稱就在提醒只適合自帶金鑰的個人工具。
+async function callClaude(system, user){
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "content-type": "application/json",
+               "x-api-key": CLAUDE_KEY,
+               "anthropic-version": "2023-06-01",
+               "anthropic-dangerous-direct-browser-access": "true" },
+    body: JSON.stringify({
+      model: CLAUDE_MODEL,
+      max_tokens: 1024,              // 例句 JSON 約 200 tokens，留裕度給 thinking 區塊
+      system,                        // 注意：Claude 不收 temperature（勘誤 E-014）
+      messages: [{ role: "user", content: user }]
+    })
+  });
+  if (!res.ok) throw new Error("Claude 回應 " + res.status);
+  const data = await res.json();
+  const block = (data.content || []).find(b => b.type === "text");   // 回應可能先有 thinking 區塊（E-009）
+  if (!block) throw new Error("Claude 回應沒有文字區塊");
+  return block.text;
+}
+
+// 團隊預設後端：Ollama
+async function callOllama(system, user){
   const res = await fetch(LOCAL_URL, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -194,7 +224,7 @@ async function aiExample(){
   let cache = {};
   try { cache = JSON.parse(localStorage.getItem("vb-ai")) || {}; } catch(e){}
   if (cache[word]) return show(cache[word]);        // 快取命中：不呼叫模型、離線可用
-  box.textContent = "生成中…（本機模型約 10 秒）";
+  box.textContent = CLAUDE_KEY ? "生成中…" : "生成中…（本機模型約 10 秒）";
   $("aiBtn").disabled = true;
   try {
     const c = JSON.parse(await callAI(EXAMPLE_SYSTEM, "用單字 " + word + " 造一個 CEFR B1 例句、中譯與聯想"));
@@ -267,7 +297,7 @@ async function makeQuiz(t){
         && !new RegExp("\\b" + esc(t.en) + "\\b", "i").test(q.question);                    // 題幹沒洩漏答案
       if (good) return { question: q.question, options: shuffle(opts), why: String(q.why || "") };
     } catch (e) {
-      if (e instanceof TypeError || /^Ollama/.test(e.message)) throw e;
+      if (e instanceof TypeError || /^(Ollama|Claude)/.test(e.message)) throw e;
     }
   }
   throw new Error("題目格式不合格");
