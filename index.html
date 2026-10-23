@@ -2,38 +2,92 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>YTP VocaBuddy</title>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0f766e">
+<meta name="theme-color" content="#0b5e57">
 <style>
-  body{font-family:system-ui,sans-serif;background:#f4f6f5;margin:0;padding:24px;text-align:center}
-  h1{color:#0f766e}
-  #stats{color:#666;font-size:.95rem}
-  #card{max-width:340px;margin:24px auto 8px;padding:36px 24px;background:#fff;border-radius:14px;
-        box-shadow:0 4px 16px rgba(0,0,0,.08);font-size:2rem;user-select:none}
-  #meaning{color:#0f766e;font-size:1.2rem;min-height:1.6em}
-  button{margin:8px 6px 0;padding:10px 22px;font-size:1rem;border:none;border-radius:8px;
-         background:#0f766e;color:#fff;cursor:pointer}
-  button.warn{background:#b3403a}
+  /* 設計概念：深青色書桌 + 紅線藍格的索引卡 + 螢光筆黃的重點 */
+  :root{--desk:#0b5e57;--paper:#fbfaf6;--rule:#cfe3ea;--ink:#12312e;--mark:#ffd84d;--good:#2f9e6a;--bad:#d9473a}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;padding:max(20px,env(safe-area-inset-top)) 18px max(28px,env(safe-area-inset-bottom));
+       background:var(--desk);color:#eaf5f2;text-align:center;
+       font:16px/1.55 ui-rounded,"SF Pro Rounded",system-ui,"PingFang TC","Noto Sans TC",sans-serif}
+  main{max-width:440px;margin:0 auto}
+  h1{margin:6px 0 2px;font-size:1.3rem;font-weight:800}
+  h1 small{margin-left:8px;padding:2px 8px;border-radius:99px;background:var(--mark);color:var(--ink);font-size:.7rem;vertical-align:2px}
+  #stats{margin:0 0 8px;font-size:.9rem;opacity:.8}
+  .bar{height:6px;border-radius:9px;background:#ffffff2e;overflow:hidden}
+  .bar i{display:block;width:0;height:100%;background:var(--mark);transition:width .4s}
+
+  /* 單字卡：頂端紅線、底下藍色橫格，像真的索引卡 */
+  #card{margin:22px 0 14px;padding:54px 22px 46px;min-height:170px;display:flex;align-items:center;justify-content:center;
+        color:var(--ink);border-radius:10px;box-shadow:0 14px 28px -12px #0008;user-select:none;word-break:break-word;
+        font:800 clamp(2.1rem,10vw,3rem)/1.15 ui-rounded,"SF Pro Rounded",system-ui,sans-serif;letter-spacing:-.01em;
+        background:linear-gradient(var(--bad),var(--bad)) 0 31px/100% 2px no-repeat,
+                   repeating-linear-gradient(transparent 0 31px,var(--rule) 31px 32px),var(--paper)}
+  #card.pop{animation:pop .3s ease-out}
+  #card.done{font-size:1.3rem;line-height:1.6}
+  @keyframes pop{from{opacity:0;transform:translateY(10px)}}
+
+  /* 中文意思：螢光筆黃的便利貼 */
+  #meaning{width:fit-content;min-height:1.9em;margin:0 auto;padding:2px 16px;border-radius:6px;font-size:1.2rem;font-weight:700}
+  #meaning.on{background:var(--mark);color:var(--ink);transform:rotate(-1deg)}
+  #ai{margin:14px 0 0;padding:10px 14px;text-align:left;font-size:.92rem;color:var(--ink);
+      background:var(--paper);border-left:4px solid var(--mark);border-radius:6px}
+  #ai:empty{display:none}
+
+  .row{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:16px}
+  .btn{padding:11px 22px;border:0;border-radius:10px;background:var(--paper);color:var(--ink);font:inherit;font-weight:700;cursor:pointer;transition:transform .1s}
+  .btn:active{transform:scale(.96)}
+  .btn:disabled{opacity:.5;cursor:wait}
+  .btn.main{background:var(--mark)}
+  .btn.ok{background:#8be0b3}
+  .btn.warn{background:#ff9b8a}
+  .btn.ghost{background:transparent;color:#eaf5f2;box-shadow:inset 0 0 0 2px #ffffff55}
+  :focus-visible{outline:3px solid var(--mark);outline-offset:2px}
+  [hidden]{display:none!important}
+
+  /* 弱點特訓 */
+  .panel{margin-top:28px}
+  #quiz{margin-top:14px;text-align:left;font-size:.95rem;opacity:.9}
+  #quiz.paper{padding:16px;border-radius:10px;background:var(--paper);color:var(--ink);opacity:1;box-shadow:0 14px 28px -12px #0008}
+  .q{margin:0 0 12px;font-size:1.08rem;font-weight:600}
+  .opts{display:grid;gap:8px}
+  .opt{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border:2px solid var(--rule);border-radius:10px;
+       background:#fff;color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+  .opt::before{content:attr(data-k);flex:none;display:grid;place-items:center;width:26px;height:26px;border-radius:50%;
+               background:var(--rule);font-size:.8rem;font-weight:800}
+  .opt:disabled{cursor:default}
+  .opt.right{border-color:var(--good);background:#e4f6ec}
+  .opt.right::before{background:var(--good);color:#fff}
+  .opt.wrong{border-color:var(--bad);background:#fdeceb}
+  .opt.wrong::before{background:var(--bad);color:#fff}
+  .opt.dim{opacity:.5}
+  .why{margin:12px 0;padding:10px 12px;border-left:4px solid var(--good);border-radius:6px;background:#f1f6f5;font-size:.92rem}
+  .why.bad{border-color:var(--bad)}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
-<h1>YTP VocaBuddy Pro 2.0</h1>
-<p id="stats"></p>
-<div id="card">—</div>
-<p id="meaning">&nbsp;</p>
-<p id="ai" style="max-width:340px;margin:8px auto;color:#555"></p>
-<div>
-  <button id="reveal" onclick="reveal()">顯示答案</button>
-  <button id="ok" onclick="mark(true)" hidden>記得 ✓</button>
-  <button id="no" onclick="mark(false)" class="warn" hidden>忘了 ✗</button>
-  <button id="aiBtn" onclick="aiExample()" hidden>AI 例句</button>
-</div>
-<div style="margin-top:24px">
-  <button onclick="smartQuiz()">考我弱點</button>
-</div>
-<div id="quiz" style="max-width:340px;margin:8px auto;color:#333"></div>
+<main>
+  <h1>YTP VocaBuddy<small>Pro 2.0</small></h1>
+  <p id="stats"></p>
+  <div class="bar"><i id="bar"></i></div>
+  <div id="card">—</div>
+  <p id="meaning">&nbsp;</p>
+  <p id="ai"></p>
+  <div class="row">
+    <button class="btn main" id="reveal" onclick="reveal()">顯示答案</button>
+    <button class="btn ok" id="ok" onclick="mark(true)" hidden>記得 ✓</button>
+    <button class="btn warn" id="no" onclick="mark(false)" hidden>忘了 ✗</button>
+    <button class="btn ghost" id="aiBtn" onclick="aiExample()" hidden>AI 例句</button>
+  </div>
+  <div class="panel">
+    <button class="btn ghost" id="quizBtn" onclick="smartQuiz()">考我弱點</button>
+    <div id="quiz"></div>
+  </div>
+</main>
 <script src="words.js"></script>
 <script src="srs.js"></script>
 <script>
@@ -59,6 +113,7 @@ function stateOf(w){
 }
 
 let queue = WORDS.filter(w => stateOf(w).due <= today());   // 只複習「到期」的卡
+const total = queue.length;                                  // 進度條的分母
 let cur = null;
 
 const $ = id => document.getElementById(id);
@@ -67,21 +122,25 @@ function next(){
   stats();                      // 擺第一行：清空那條分支也要更新上方的計數
   $("aiBtn").hidden = true;     // 換卡就收起 AI 例句
   $("ai").textContent = "";
+  $("meaning").className = "";
+  $("meaning").innerHTML = "&nbsp;";
+  const c = $("card");
   if (queue.length === 0){
-    $("card").textContent = "今天沒有到期的卡——明天見！";
-    $("meaning").innerHTML = "&nbsp;";
+    c.className = "done";
+    c.textContent = "今天沒有到期的卡——明天見！";
     $("reveal").hidden = $("ok").hidden = $("no").hidden = true;
     return;
   }
   cur = queue[0];
-  $("card").textContent = cur.en;
-  $("meaning").innerHTML = "&nbsp;";
+  c.className = ""; void c.offsetWidth; c.className = "pop";   // 重啟換卡動畫
+  c.textContent = cur.en;
   $("reveal").hidden = false;
   $("ok").hidden = $("no").hidden = true;
 }
 
 function reveal(){
   $("meaning").textContent = cur.zh;
+  $("meaning").className = "on";
   $("reveal").hidden = true;
   $("ok").hidden = $("no").hidden = false;
   $("aiBtn").hidden = false;    // 先自己回想、翻面後才給 AI 例句
@@ -100,6 +159,7 @@ function mark(ok){
 
 function stats(){
   $("stats").textContent = "今日佇列：剩 " + queue.length + " 張";
+  $("bar").style.width = (total ? (total - queue.length) / total * 100 : 100) + "%";
 }
 
 // AI 例句：教材原版是瀏覽器直呼 Claude API（使用者自帶金鑰）。
@@ -118,8 +178,8 @@ async function callAI(system, user){
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
       model: LOCAL_MODEL,
-      stream: false,
-      think: false,                  // qwen3.5 預設先思考，實測慢 20 倍
+      stream: false,                  // Ollama 端不支援 SSE，Claude 才有
+      think: true,                  // qwen3.5 預設先思考，實測慢 20 倍
       format: "json",                // Ollama 端的結構化輸出：保證回的是合法 JSON
       messages: [{ role: "system", content: system },
                  { role: "user", content: user }]
@@ -160,51 +220,107 @@ async function aiExample(){
 }
 
 // —— 弱點檢索：按錯誤率排序取前 k 名（RAG-lite 的 Retrieval）——
+// 同分時隨機排序，避免永遠只考單字包最前面那幾個
 function weakest(k){
   return WORDS
     .map(w => { const s = log[w.en] || {seen:0, wrong:0};
-                return { en: w.en, zh: w.zh, rate: s.wrong / (s.seen || 1) }; })
-    .sort((a, b) => b.rate - a.rate)
+                return { en: w.en, zh: w.zh, rate: s.wrong / (s.seen || 1), r: Math.random() }; })
+    .sort((a, b) => b.rate - a.rate || a.r - b.r)
     .slice(0, k);
 }
 
-// —— 智慧出題：檢索出的弱字塞進 prompt，讓 AI 針對它們出題 ——
-async function smartQuiz(){
-  const t = weakest(3);
+// —— 智慧出題 ——
+// 出題變笨的原因與對策：
+// 1. 以前讓模型自己「從 3 個字挑一個」→ 小模型幾乎永遠挑第一個。現在改由程式挑目標字，模型只負責出題。
+// 2. 以前沒講「好題目」的標準 → 句子太空泛、干擾項亂湊。現在 prompt 明列規則並附一個範例。
+// 3. JSON 先寫 clue（線索）再造句：讓模型先想「靠什麼推出答案」，題目比較不會模稜兩可。
+// 4. 選項順序由程式洗牌，不讓正解固定出現在同一個位置。
+const QUIZ_SYSTEM = `你是台灣高中英文命題老師，出英文克漏字四選一。只輸出 JSON，不要 markdown 圍欄或其他文字，欄位依序為：
+{"clue":"..","question":"..","options":["..","..","..",".."],"answer":"..","why":".."}
+規則：
+1. clue：先用一句中文寫出「句中讓答案唯一的線索」（因果、對比、搭配詞等），再根據它造句。
+2. question：自然的英文句（CEFR B1–B2、10–20 字），含一個 ____，且目標單字的「原形」直接填入即合文法，不可變化詞形（動詞用 to ____、can ____ 之類結構）。句中不得出現目標單字本身。
+3. 句子要有具體情境與線索，只有目標單字能填。禁止 I like ____. 這種什麼詞都能填的句子。
+4. options：4 個英文單字，answer 是目標單字原形。另外 3 個干擾項須與目標同詞性、難度相近、容易混淆（語意相近或拼字相似），但放進句子後明確不通。不得有兩個選項都合理，不得重複，不得使用中文。
+5. why：用繁體中文兩句內說明答案為什麼對，以及最像的干擾項為什麼錯。
+範例（只示範格式與品質，不要照抄）：
+{"clue":"but 表示對比：預期會慌張，實際上相反","question":"Everyone expected her to panic, but she stayed ____ during the whole interview.","options":["calm","curious","cruel","careless"],"answer":"calm","why":"but 帶出對比：預期慌張，實際上保持「冷靜」。curious 是好奇，和前後文語意無關。"}`;
+
+const SCENES = ["校園生活","旅行","科技與網路","運動比賽","家人與朋友","新聞時事","環境保護","美食","工作面試","科學實驗"];
+const norm = s => String(s).trim().toLowerCase();
+const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--){
+  const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+let lastQuiz = "";
+
+// 向模型要一題；不合格就重試一次（網路錯誤不重試，免得白等兩倍時間）
+async function makeQuiz(t){
+  for (let i = 0; i < 2; i++){
+    try {
+      const q = JSON.parse(await callAI(QUIZ_SYSTEM,
+        "目標單字：" + t.en + "（" + t.zh + "）\n情境：" + SCENES[Math.floor(Math.random() * SCENES.length)] +
+        "\nanswer 必須是 " + t.en + "。"));
+      const opts = Array.isArray(q.options) ? q.options.map(String) : [];
+      const good = typeof q.question === "string" && q.question.split("____").length === 2   // 恰一個空格
+        && opts.length === 4 && new Set(opts.map(norm)).size === 4                          // 四個不重複
+        && norm(q.answer) === norm(t.en) && opts.some(o => norm(o) === norm(t.en))          // 答案是目標字本尊
+        && !new RegExp("\\b" + esc(t.en) + "\\b", "i").test(q.question);                    // 題幹沒洩漏答案
+      if (good) return { question: q.question, options: shuffle(opts), why: String(q.why || "") };
+    } catch (e) {
+      if (e instanceof TypeError || /^Ollama/.test(e.message)) throw e;
+    }
+  }
+  throw new Error("題目格式不合格");
+}
+
+function renderQuiz(q, t){
   const box = $("quiz");
-  box.textContent = "出題中…（本機模型約 10 秒）";
+  box.className = "paper";
+  box.textContent = "";                                   // 模型輸出當文字，不當 HTML
+  const p = document.createElement("p");
+  p.className = "q";
+  p.textContent = q.question;
+  const list = document.createElement("div");
+  list.className = "opts";
+  q.options.forEach((op, i) => {
+    const b = document.createElement("button");
+    b.className = "opt"; b.dataset.k = "ABCD"[i]; b.textContent = op;
+    b.onclick = () => {
+      const ok = norm(op) === norm(t.en);
+      list.querySelectorAll("button").forEach(x => {      // 一題只記一次
+        x.disabled = true;
+        x.classList.add(norm(x.textContent) === norm(t.en) ? "right" : x === b ? "wrong" : "dim");
+      });
+      const s = log[t.en] || (log[t.en] = {seen:0, wrong:0});   // 鍵用單字本尊，不用模型字串
+      s.seen++; if (!ok) s.wrong++;                       // 答題結果寫回紀錄：閉環
+      save();
+      const r = document.createElement("p");
+      r.className = "why" + (ok ? "" : " bad");
+      r.textContent = (ok ? "答對！" : "正解：" + t.en + "。") + " " + q.why;
+      const n = document.createElement("button");
+      n.className = "btn main"; n.textContent = "下一題"; n.onclick = smartQuiz;
+      box.append(r, n);
+    };
+    list.appendChild(b);
+  });
+  box.append(p, list);
+}
+
+async function smartQuiz(){
+  const pool = weakest(5).filter(w => w.en !== lastQuiz);        // 前五弱，且不連考同一字
+  const t = pool[Math.floor(Math.random() * pool.length)] || weakest(1)[0];
+  const box = $("quiz");
+  box.className = "";
+  box.textContent = "出題中…（兄弟你沒急吧）";
+  $("quizBtn").disabled = true;
   try {
-    const text = await callAI(
-      '你是出題老師。只輸出 JSON：{"question":"...","options":["..","..","..",".."],' +
-      '"answer":"..","why":".."}。question 是含 ____ 的英文克漏字句。',
-      "使用者最常錯的單字：" + t.map(w => w.en + "（" + w.zh + "）").join("、") +
-      "。從中挑一個出一題四選一，選項要包含正確答案與三個貼近的干擾項。");
-    const q = JSON.parse(text);
-    // 把模型回的答案對回單字包裡的本尊：大小寫不同、或根本不是你的單字，都不出題
-    const hit = t.find(w => w.en.toLowerCase() === String(q.answer || "").toLowerCase());
-    if (!Array.isArray(q.options) || q.options.length !== 4 ||
-        !q.options.includes(q.answer) || !hit) throw new Error("題目格式不合格");
-    box.textContent = "";                                 // 模型輸出當文字，不當 HTML
-    const p = document.createElement("p");
-    p.textContent = q.question;
-    box.appendChild(p);
-    q.options.forEach(op => {
-      const b = document.createElement("button");
-      b.textContent = op;
-      b.onclick = () => {
-        box.querySelectorAll("button").forEach(x => x.disabled = true);   // 一題只記一次
-        const ok = op === q.answer;
-        const s = log[hit.en] || (log[hit.en] = {seen:0, wrong:0});   // 鍵用本尊，不用模型字串
-        s.seen++; if (!ok) s.wrong++;                     // 答題結果寫回紀錄：閉環
-        save();
-        const r = document.createElement("p");
-        r.textContent = ok ? "答對！" + q.why : "正解：" + q.answer + "。" + q.why;
-        box.appendChild(r);
-      };
-      box.appendChild(b);
-    });
+    const q = await makeQuiz(t);
+    lastQuiz = t.en;
+    renderQuiz(q, t);
   } catch (e) {
-    box.textContent = "AI 暫時不可用，先用單字卡複習吧。";
+    box.textContent = "老子卡了，先用單字卡複習吧。";
+  } finally {
+    $("quizBtn").disabled = false;
   }
 }
 
