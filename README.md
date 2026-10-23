@@ -35,7 +35,7 @@
   * *(若有其他組員新增的單字可在此補充)*
 * **新增的功能**：
   * 考單字
-  * 單字包 CSV 匯入（Lab 10 畢業挑戰）：貼上 `en,zh` 格式的 CSV，即可擴充自訂單字；含格式驗證（欄位缺漏、重複字、BOM、CRLF、引號內逗號），錯誤行逐行回報，合法行照常匯入。
+  * 單字包 CSV 匯入（Lab 10 畢業挑戰）：貼上 `en,zh` 格式的 CSV，即可擴充自訂單字；含格式驗證（欄位缺漏、重複字、BOM、CRLF、引號內逗號），錯誤行逐行回報，合法行照常匯入；自訂單字存 localStorage、重新整理仍在，並可一鍵「清除匯入」（學習紀錄保留）。
 
 ## 📊 Lab 進度總覽表
 
@@ -103,9 +103,10 @@ node test_csv.js
 
 ## ⚠️ 目前已知缺口與下一步
 
-1. **Lab 9 `sw.js` 快取版本過舊**：目前為 `v1`，`SHELL` 中未包含 `csv.js`，建議升級為 `v2` 並加入 `csv.js`、`icon.png`。
-2. **Lab 6 AI 來源**：目前呼叫本地 Olloma，教材要求為瀏覽器直呼 Claude API（使用者自帶金鑰 BYOK），視課程要求決定是否切換。
-3. **Lab 11~14 未開始**：缺 `CLAUDE.md`（專案指示檔）、`.claude/skills/add-words/`、` .claude/agents/code-reviewer/`。
+1. ~~**Lab 9 `sw.js` 快取版本過舊**~~：已升級為 `v2`（`SHELL` 含 `csv.js`、`icon.png`，啟用時自動清除舊快取）。
+2. ~~**Lab 6 AI 來源**~~：改為雙後端——有 `vb-claude-key` 時直呼 Claude API（教材標準做法，BYOK），沒金鑰自動退回 Ollama，兩者網址與模型皆可在 Console 自訂。
+3. ~~**Lab 11~14 未開始**~~：已補 `CLAUDE.md`（Lab 12 專案指示）、`.claude/skills/add-words/`（Lab 13）、`.claude/agents/code-reviewer.md`（Lab 14）。
+4. **下一步**：Lab 10 匯入 UI 已上線並通過瀏覽器驗證；待團隊 review 後走 PR 合回 `main`，並考慮 README 提過的 SM-2 排程與語音發音。
 
 ---
 
