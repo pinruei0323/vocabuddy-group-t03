@@ -10,6 +10,6 @@ description: 要新增或修改單字包（words.js）的時候用。使用者�
 1. **讀 `words.js`** 確認格式：`{en:"小寫英文", zh:"繁中中文"}`，同主題的字排在一起，主題開頭有一行 `// 主題名 單字包` 註解。
 2. **核對使用者給的內容**：每個字都要有英文與中文意思；缺的先問人，不要自己編。英文統一小寫，與檔內既有單字重複（不分大小寫）要先指出來問要不要照加。
 3. **加在檔案最後**：新主題先加一行 `// 主題名 單字包` 註解，再放單字；沿用檔案現有的對齊與逗號風格。
-4. **跑 `node check_words.js`**：必須印出「檢查通過」；不過就修到過（通常是欄位缺漏或重複字），修不好就退回第 2 步問人。
-5. **只 commit `words.js`**：`git add words.js` 後用訊息 `feat: 新增 N 個「主題」單字` 提交；若目前分支名以 `labNN` 開頭，訊息前面再加 `labNN:`（例：`lab11: feat: 新增 3 個「天氣」單字`）。不要把其他檔案一起 commit。
+4. **跑三項檢查**：`node check_words.js`、`node test_srs.js`、`node test_csv.js` 都要通過（CLAUDE.md 的提交門檻）；check_words 不過就修到過（通常是欄位缺漏或重複字），修不好就退回第 2 步問人。
+5. **只 commit `words.js`**：`git add words.js` 後用訊息 `feat: 新增 N 個「主題」單字` 提交。若這次改動屬於某個 Lab（分支名開頭取得到 `labNN`，或正在做該 Lab 的作業），訊息前面再加 `labNN:`（例：`lab11: feat: 新增 3 個「天氣」單字`）；不確定屬於哪個 Lab 就問人。不要把其他檔案一起 commit。
 6. **不自動 push**：commit 完回報 `git diff HEAD~1` 的重點與 check_words.js 的輸出，push 與否由人決定。
