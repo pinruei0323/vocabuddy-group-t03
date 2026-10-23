@@ -1,15 +1,21 @@
-const CACHE = "ytp-vocabuddy-v2";     // v2：加入 csv.js（Lab 10 匯入功能離線可用）
+const CACHE = "ytp-vocabuddy-v3";     // v3：加入更新提示（skipWaiting＋activate 通知頁面）
 const SHELL = ["./", "index.html", "words.js", "srs.js", "csv.js", "manifest.json", "icon.png"];
 
 self.addEventListener("install", e => {
+  // 新版不等所有分頁關閉就接手；頁面收到通知後彈「有新版本」，重載時機由人決定
+  self.skipWaiting();
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)));   // 安裝時先存一份
 });
 
 self.addEventListener("activate", e => {
-  // 啟用新版本時清掉舊快取（如 v1），避免離線時繼續拿到沒有 csv.js 的舊頁面
-  e.waitUntil(caches.keys().then(keys =>
-    Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-  ));
+  // 清掉舊快取（如 v2）→ 接手既有分頁 → 主動通知頁面「新版已上線」
+  e.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)));
+    await self.clients.claim();
+    const wins = await self.clients.matchAll({ type: "window" });
+    wins.forEach(c => c.postMessage({ type: "vb-activated" }));
+  })());
 });
 
 self.addEventListener("fetch", e => {
