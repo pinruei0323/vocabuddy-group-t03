@@ -67,6 +67,14 @@
   .why{margin:12px 0;padding:10px 12px;border-left:4px solid var(--good);border-radius:6px;background:#f1f6f5;font-size:.92rem}
   .why.bad{border-color:var(--bad)}
   @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+  /* CSV 匯入面板 */
+  #csvBox{margin-top:14px}
+  #csvText{width:100%;padding:10px 12px;border:0;border-radius:10px;background:var(--paper);color:var(--ink);
+           font:inherit;font-size:.9rem;box-shadow:0 14px 28px -12px #0008}
+  #csvText:focus-visible{outline:3px solid var(--mark);outline-offset:2px}
+  #csvMsg{margin-top:10px;font-size:.88rem;text-align:left;white-space:pre-line}
+  #csvMsg .bad{color:#ffb3aa}
 </style>
 </head>
 <body>
@@ -85,16 +93,35 @@
   </div>
   <div class="panel">
     <button class="btn ghost" id="quizBtn" onclick="smartQuiz()">考我弱點</button>
+    <button class="btn ghost" onclick="setKey()">設定 AI 金鑰</button>
     <div id="quiz"></div>
+  </div>
+  <div class="panel">
+    <button class="btn ghost" id="csvBtn" onclick="toggleCsv()">匯入單字包 CSV</button>
+    <div id="csvBox" hidden>
+      <textarea id="csvText" rows="4" placeholder="en,zh 每行一個單字，可整批貼上；&#10;欄位可用雙引號包住，例如 &quot;give up&quot;,&quot;放棄&quot;"></textarea>
+      <div class="row"><button class="btn main" onclick="importCsv()">匯入</button><button class="btn warn" onclick="clearImported()">清除匯入</button></div>
+      <div id="csvMsg"></div>
+    </div>
   </div>
 </main>
 <script src="words.js"></script>
 <script src="srs.js"></script>
+<script src="csv.js"></script>
 <script>
 // 學習紀錄：只屬於這台裝置，所以放 localStorage（讀寫都包 try/catch）
 let log = {};
 try { log = JSON.parse(localStorage.getItem("vb-log")) || {}; } catch(e){}
 function save(){ try { localStorage.setItem("vb-log", JSON.stringify(log)); } catch(e){} }
+
+// 自訂單字（CSV 匯入，Lab 10）：存 localStorage，重新整理仍在；啟動時併入單字包
+// words.js 之後若加了同樣的字，這裡把它濾掉，避免執行期出現重複單字
+try {
+  const mine = new Set(WORDS.map(w => w.en.toLowerCase()));
+  (JSON.parse(localStorage.getItem("vb-custom")) || [])
+    .filter(w => w && w.en && w.zh && !mine.has(w.en.toLowerCase()))
+    .forEach(w => { WORDS.push(w); mine.add(w.en.toLowerCase()); });
+} catch(e){}
 
 // —— 日期：以「第幾天」為單位，附時間旅行測試器 ——
 let dayOffset = 0;
@@ -113,7 +140,7 @@ function stateOf(w){
 }
 
 let queue = WORDS.filter(w => stateOf(w).due <= today());   // 只複習「到期」的卡
-const total = queue.length;                                  // 進度條的分母
+let total = queue.length;                                    // 進度條的分母（CSV 匯入會再增加）
 let cur = null;
 
 const $ = id => document.getElementById(id);
@@ -172,6 +199,15 @@ let CLAUDE_KEY = "";
 try { CLAUDE_KEY = (localStorage.getItem("vb-claude-key") || "").trim(); } catch(e){}
 if (CLAUDE_KEY === "null") CLAUDE_KEY = "";   // prompt() 按取消會被存成字串 "null"，當成沒金鑰
 const EXAMPLE_SYSTEM = '你是高中英語老師。只輸出 JSON：{"sentence":"...","zh":"...","tip":"..."}，不要 markdown 圍欄，不要其他文字。';
+
+// 用途：讓使用者自帶金鑰（BYOK）——prompt 輸入、只存這台裝置的 localStorage；留空送出＝清除、改走 Ollama；按取消＝不動
+function setKey(){
+  const k = prompt("輸入 Claude API 金鑰（BYOK，只存在你自己的瀏覽器，不會傳到別的地方）。\n留空送出＝清除金鑰、改用團隊 Ollama。", CLAUDE_KEY);
+  if (k === null) return;
+  CLAUDE_KEY = k.trim();
+  if (CLAUDE_KEY === "null") CLAUDE_KEY = "";
+  try { localStorage.setItem("vb-claude-key", CLAUDE_KEY); } catch(e){}
+}
 
 // 共用的 AI 呼叫：給 system 與 user 兩段提示，回傳模型的文字（例句與出題都用它）
 async function callAI(system, user){
@@ -352,6 +388,50 @@ async function smartQuiz(){
   } finally {
     $("quizBtn").disabled = false;
   }
+}
+
+// —— CSV 匯入 UI（Lab 10）：解析與驗證都是 csv.js 的純函式，這裡只負責接畫面 ——
+// 用途：展開／收合匯入區塊，展開時把焦點移到文字框，方便直接貼上
+function toggleCsv(){
+  $("csvBox").hidden = !$("csvBox").hidden;
+  if (!$("csvBox").hidden) $("csvText").focus();
+}
+
+// 用途：把文字框的 CSV 交給純函式解析驗證，合法行併入單字包與今日佇列、錯誤行逐行回報
+function importCsv(){
+  const box = $("csvMsg");
+  box.textContent = "";
+  const { ok, errors } = validateWords(parseCSV($("csvText").value), WORDS);
+  if (ok.length){
+    let custom = [];
+    try { custom = JSON.parse(localStorage.getItem("vb-custom")) || []; } catch(e){}
+    ok.forEach(w => { WORDS.push(w); custom.push(w); });      // 併入單字包：複習佇列與弱點出題都吃得到
+    try { localStorage.setItem("vb-custom", JSON.stringify(custom)); } catch(e){}
+    const fresh = ok.filter(w => !queue.includes(w));          // 已在隊上的（匯過又忘掉）不重複排
+    fresh.forEach(w => { stateOf(w); queue.push(w); });        // 新字今天就到期，立刻進隊
+    total += fresh.length;                                     // 進度條分母跟著長
+    if (!cur || queue.length === fresh.length) next(); else stats();   // 複習到一半只更新張數，不把眼前的卡翻回正面
+    box.textContent = "已匯入 " + ok.length + " 個單字：" + ok.map(w => w.en).join("、");
+    $("csvText").value = "";
+  } else {
+    box.textContent = "沒有可匯入的單字。";
+  }
+  errors.forEach(e => {                                        // 錯誤逐行回報，不影響合法行
+    const s = document.createElement("span");
+    s.className = "bad";
+    s.textContent = "\n第 " + e.line + " 行：" + e.reason;
+    box.appendChild(s);
+  });
+}
+
+// 用途：一鍵移除所有匯入的自訂單字（學習紀錄保留）；重新載入是最簡單可靠的「重算佇列」
+function clearImported(){
+  let custom = [];
+  try { custom = JSON.parse(localStorage.getItem("vb-custom")) || []; } catch(e){}
+  if (!custom.length){ $("csvMsg").textContent = "沒有匯入過的單字。"; return; }
+  if (!confirm("移除 " + custom.length + " 個匯入的單字？學習紀錄會保留。")) return;
+  try { localStorage.setItem("vb-custom", "[]"); } catch(e){}
+  location.reload();
 }
 
 next();

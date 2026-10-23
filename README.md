@@ -35,7 +35,7 @@
   * *(若有其他組員新增的單字可在此補充)*
 * **新增的功能**：
   * 考單字
-  * 單字包 CSV 匯入（Lab 10 畢業挑戰）：貼上 `en,zh` 格式的 CSV，即可擴充自訂單字；含格式驗證（欄位缺漏、重複字、BOM、CRLF、引號內逗號），錯誤行逐行回報，合法行照常匯入。
+  * 單字包 CSV 匯入（Lab 10 畢業挑戰）：貼上 `en,zh` 格式的 CSV，即可擴充自訂單字；含格式驗證（欄位缺漏、重複字、BOM、CRLF、引號內逗號），錯誤行逐行回報，合法行照常匯入；自訂單字存 localStorage、重新整理仍在，並可一鍵「清除匯入」（學習紀錄保留）。
 
 ## 📊 Lab 進度總覽表
 
@@ -45,28 +45,31 @@
 | Lab 2 | 分支、PR 與衝突解決 | ✅ 已完成 | `index.html` | 「考我」隨機抽卡功能，GitHub Flow 已走完 |
 | Lab 3 | 例句生成 CLI（Python） | ✅ 已完成 | `tools/gen_example.py` | 呼叫 Claude API 產生例句，API key 從環境變數讀取 |
 | Lab 5 | Sprint 1 MVP：今日複習併列 | ✅ 已完成 | `index.html` | 看卡→回想→翻面→自評→下一張，localStorage 儲存 seen/wrong |
-| Lab 6 | Sprint 2：AI 例句上卡片 | ⚠️ 部分完成 | `index.html` | 有 AI 例句按鈕，但目前呼叫本地 Ollama 而非教材要求的 Claude BYOK |
+| Lab 6 | Sprint 2：AI 例句上卡片 | ✅ 已完成 | `index.html` | 雙後端：有金鑰直呼 Claude（BYOK，「設定 AI 金鑰」按鈕），沒金鑰自動退回團隊 Ollama；有快取與降階 |
 | Lab 7 | Sprint 3：SRS 排程（Leitner） | ✅ 已完成 | `srs.js`、`test_srs.js` | 純函式排程，5 組測試通過 |
 | Lab 8 | Sprint 4：弱點出題 + 單字包共編 | ✅ 已完成 | `words.js`、`check_words.js` | 「考我弱點」按鈕，單字包獨立成檔，CI 檢查通過 |
-| Lab 9 | Ship It：PWA + CI + 上線 | ⚠️ 部分完成 | `sw.js`、`manifest.json`、`ci.yml` | 有 Service Worker 與 CI，但快取仍為 v1，未加入 csv.js |
-| Lab 10 | 畢業挑戰：CSV 匯入 | ✅ 已完成 | `csv.js`、`test_csv.js` | 畢業挑戰已完成，測試皆綠 |
-| Lab 11~14 | 代理式編碼工具層 | ❌ 未開始 | － | 缺 `CLAUDE.md`、`.claude/skills/`、`.claude/agents/` |
+| Lab 9 | Ship It：PWA + CI + 上線 | ✅ 已完成 | `sw.js`、`manifest.json`、`ci.yml` | Service Worker 快取 v2（含 csv.js）、CI 三項檢查、`v1.0` 標籤；GitHub Pages 待管理員在設定頁啟用 |
+| Lab 10 | 畢業挑戰：CSV 匯入 | ✅ 已完成 | `csv.js`、`test_csv.js`、`index.html` | 純函式＋測試皆綠；匯入 UI 與「清除匯入」完成並通過瀏覽器完整驗證 |
+| Lab 11 | 開工準備（代理式工具） | ✅ 已完成 | `docs/lab11-setup.md` | 工具三問、模式對照、小改動（3 個演算法單字）三重驗證後提交 |
+| Lab 12 | 專案指示檔 | ✅ 已完成 | `CLAUDE.md` | 慣例、git 流程、測試與安全規範 |
+| Lab 13 | 技能：add-words | ✅ 已完成 | `.claude/skills/add-words/SKILL.md`、`docs/lab13-skill-test.md` | 正面測試實跑通過；負面測試需 Claude Code 環境補做（已誠實標記） |
+| Lab 14 | 子代理：code-reviewer | ✅ 已完成 | `.claude/agents/code-reviewer.md`、`docs/lab14-review.md` | 審 Lab 13 diff 實跑，採納 5 則建議並修正，四格比較完成 |
 
-> 目前分支：`feature/lab10-csv-import`（CSV 匯入已 commit）  
-> 主分支：`main`
+> 目前分支：`feature/lab10-14`（Lab 6 補完～Lab 14 的提交都在這裡，待開 PR 合回 `main`；各 Lab 完成點有 `labNN-done` 標籤）  
+> 主分支：`main`（教材＋Lab 6 基礎已於 2026-10-24 直推，之後建議開分支保護）
 
 ## 📁 各檔案與 Lab 對應表
 
 | 檔案 | 所屬 Lab | 負責功能 |
 |------|----------|----------|
 | `index.html` | Lab 1~5（核心） | 單字卡介面、複習迴路、localStorage 學習紀錄 |
-| `words.js` | Lab 8 | 單字包（21 字），獨立成檔供全隊共編 |
+| `words.js` | Lab 8 | 單字包（27 字），獨立成檔供全隊共編 |
 | `check_words.js` | Lab 8 | 單字包驗證：欄位缺漏、重複字檢查 |
 | `srs.js` | Lab 7 | Leitner SRS 純函式排程（間隔 1/2/4/8/16 天） |
 | `test_srs.js` | Lab 7 | SRS 單元測試，5 組斷言皆通過 |
 | `csv.js` | Lab 10 | CSV 匯入純函式：BOM、CRLF、引號逗號、去重驗證 |
 | `test_csv.js` | Lab 10 | CSV 匯入單元測試，9 組斷言皆通過 |
-| `sw.js` | Lab 9 | Service Worker 離線快取（目前為 v1，建議升級 v2） |
+| `sw.js` | Lab 9 | Service Worker 離線快取（v2，SHELL 含 csv.js，啟用時自動清舊快取） |
 | `manifest.json` | Lab 9 | PWA 應用程式清單 |
 | `ci.yml` | Lab 9 | GitHub Actions CI，每次 push/PR 自動跑測試 |
 | `tools/gen_example.py` | Lab 3 | Python 例句生成 CLI |
@@ -81,7 +84,7 @@ Lab 5 教材要求的五項驗收條件，與本專案目前實作狀態如下�
 | 2 | 「忘了」的卡稍後會再出現，直到你答「記得」 | ✅ 符合 | `mark(false)` 時會將該卡 `queue.push(queue.shift())` 排到今天隊尾，直到答「記得」才移除 |
 | 3 | 重新整理後，seen/wrong 統計仍在 | ✅ 符合 | 學習紀錄 `log` 儲存在瀏覽器 `localStorage`（鍵名 `vb-log`），重新整理不會消失 |
 | 4 | 手機上按鈕大小、字級可正常操作 | ✅ 符合 | CSS 中按鈕有固定 padding 與 font-size，卡片字級 32px，可在手機瀏覽器操作 |
-| 5 | PR 已合併、tag `sprint1-done` 已推上 GitHub | ⚠️ 程式碼已完成，tag 尚未建立 | 核心功能已實作，但尚未在 git 上建立 `sprint1-done` tag |
+| 5 | PR 已合併、tag `sprint1-done` 已推上 GitHub | ✅ 符合 | `sprint1-done`～`sprint4-done`、`lab4-done` 標籤皆已在 GitHub 上 |
 
 > 💡 注意：目前的 `index.html` 已經是包含 Lab 6~10 功能的完整版（AI 例句、SRS 排程、弱點出題、CSV 匯入、PWA），Lab 5 的核心複習迴路皆已包含在內並可正常運作。
 
@@ -103,9 +106,14 @@ node test_csv.js
 
 ## ⚠️ 目前已知缺口與下一步
 
-1. **Lab 9 `sw.js` 快取版本過舊**：目前為 `v1`，`SHELL` 中未包含 `csv.js`，建議升級為 `v2` 並加入 `csv.js`、`icon.png`。
-2. **Lab 6 AI 來源**：目前呼叫本地 Olloma，教材要求為瀏覽器直呼 Claude API（使用者自帶金鑰 BYOK），視課程要求決定是否切換。
-3. **Lab 11~14 未開始**：缺 `CLAUDE.md`（專案指示檔）、`.claude/skills/add-words/`、` .claude/agents/code-reviewer/`。
+1. ~~**Lab 9 `sw.js` 快取版本過舊**~~：已升級為 `v2`（`SHELL` 含 `csv.js`、`icon.png`，啟用時自動清除舊快取）。
+2. ~~**Lab 6 AI 來源**~~：改為雙後端——有 `vb-claude-key` 時直呼 Claude API（教材標準做法，BYOK，「設定 AI 金鑰」按鈕輸入），沒金鑰自動退回 Ollama，兩者網址與模型皆可在 Console 自訂。
+3. ~~**Lab 11~14 未開始**~~：已補 `CLAUDE.md`（Lab 12）、`.claude/skills/add-words/`（Lab 13）、`.claude/agents/code-reviewer.md`（Lab 14），驗證紀錄在 `docs/`。
+4. **Lab 1~14 全數完成**（2026-10-24）：各 Lab 完成點都有 `labNN-done`／`v1.0` 標籤。剩三件需要人做：
+   - **開 PR**：把 `feature/lab10-14` 合回 `main`（Lab 6 補完～Lab 14 的提交都在這個分支）。
+   - **啟用 GitHub Pages**：repo 設定頁 → Pages → 選 `main`（Lab 9 的部署驗收項）。
+   - **main 分支保護**：Settings → Branches，要求走 PR（教材的 GitHub Flow）。
+5. **後續功能（教材 Roadmap）**：SM-2 排程、語音發音、學習統計頁；Lab 13 的負面觸發測試需在 Claude Code 環境補做（見 `docs/lab13-skill-test.md`）。
 
 ---
 
