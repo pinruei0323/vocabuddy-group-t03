@@ -14,6 +14,9 @@ const WORDS = [
   {en:"butterfly", zh:"蝴蝶"},     {en:"leopard", zh:"花豹"},
   // 演算法主題單字包（Lab 11 小改動）
   {en:"loop", zh:"迴圈"},          {en:"variable", zh:"變數"},
-  {en:"debug", zh:"除錯"}
+  {en:"debug", zh:"除錯"},
+  // 天氣主題單字包
+  {en:"sunny", zh:"晴朗的"},        {en:"rainy", zh:"下雨的"},
+  {en:"thunderstorm", zh:"雷暴"}
 ];
 if (typeof module !== "undefined") module.exports = WORDS;
